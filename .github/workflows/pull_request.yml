@@ -1,0 +1,48 @@
+name: Pull requests
+
+on: [pull_request]
+
+jobs:
+
+  staticAnalysis:
+
+    runs-on: ubuntu-18.04
+
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+
+      - name: Static Analysis
+        run: ./gradlew ktlintCheck detekt app:lintDebug custom:lintCustomexampleDebug
+
+      - name: Upload Static Analysis Report
+        uses: actions/upload-artifact@v2.2.0
+        if: ${{ always() }}
+        with:
+          name: Static Analysis Report
+          path: |
+            **/reports/
+
+
+  build:
+
+    runs-on: ubuntu-18.04
+
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          fetch-depth: 1
+
+      - name: Install NDK
+        run: echo "y" | sudo ${ANDROID_HOME}/tools/bin/sdkmanager --install "ndk;22.0.7026061" --sdk_root=${ANDROID_SDK_ROOT}
+
+      - name: Build all configurations
+        run: ./gradlew assemble
+
+      - name: Upload APK as Artifacts
+        uses: actions/upload-artifact@v2.2.0
+        with:
+          name: kiwix-android
+          path: |
+            **/*.apk
